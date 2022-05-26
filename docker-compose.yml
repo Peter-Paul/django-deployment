@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  simple:
+    container_name: simple_app
+    image: django-app
+    volumes:
+      - ./deployment/:/app/deployment
+    working_dir: /app/deployment
+    command: bash -c "python manage.py migrate && gunicorn -b 0.0.0.0:8000 -w 3 deployment.wsgi:application"
+    # ports:
+    #   - 8000:8000
+    expose:
+      - 8000
+
+  proxy: #django proxy
+    image: nginx:latest
+    restart: always # restart on reboot
+    volumes:
+      - ./proxy-conf/nginx.conf:/etc/nginx/nginx.conf
+      - ./frontend/web/build:/app
+    ports:
+      - '8080:80' # 8080 for outer OPS (operating system) localhost 80 for inner
+    depends_on:
+      - simple_app
+
